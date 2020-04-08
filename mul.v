@@ -3,6 +3,7 @@ module mul(input [31:0] a,b,
                   input clk,
                   input  start,
                   input is_signed,
+                  output mulfinish,
                   output reg[63:0] y);//mul_low and mul_h, where to store mflo and mfhi
 /*always@(posedge clk)
   begin
