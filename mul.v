@@ -27,42 +27,23 @@ wire mstart = start;
 
 always@(start,posedge clk)//not sure the break point
   begin
-case(is_signed)
-1'b0:begin
   if(state == 8'b0)  
-    muladder({32'b0,a},64'b0,1'b0,sum2,cout1);
+    muladder(((signb[0])?signa:64'b0,64'b0,1'b0,sum1,cout1);
   else
       begin
           shifter(is_signed,sum1,sum1);
-          muladder((b[state])?sum1:64'b0,sum2,cout1,sum2,cout1);
+          muladder((signb[state])?sum1:64'b0,sum2,cout1,sum2,cout1);
       end
 if(state ==8'b11111)
     begin
       y <= sum2;
-
+      mulfinish = 1'b1;
     end
 eadder(state,8'b1,state);
-end
-
-1'b1:begin
-  if(state == 8'b0)  
-    muladder((signb[0])?signa:64'b0,64'b0,1'b0,sum2,cout1);
-  else
-      begin
-    shifter(is_signed,sum1,sum1);
-    muladder((signb[state])?sum1:64'b0,sum2,cout1,sum2,cout1);
-      end
-if(state ==8'b11111)
-    begin
-       y <= sum2;
-
-    end
-eadder(state,8'b1,state);
-end
-endcase
 end
 
 endmodule 
+
 
 
 module shifter(input sign,
