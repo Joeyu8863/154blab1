@@ -281,13 +281,13 @@ module excutionstage (input RegWriteD,
                       input MemWriteD,MemReadD,start_multD,mult_signD,
                       input [2:0] ALUControlD,
                       input alusrcD, clk,RegDstD,
-                      input FlushE,
+                      input FlushE,enable,
                       output reg RegWriteE,
                       output reg MemtoRegE,
                       output reg MemWriteE,MemReadE,start_multE,mult_signE,
                       output reg [3:0] ALUControlE,
                       output reg alusrcE, RegDstE);
-always@(posedge clk)
+always@(posedge clk, enable)
 begin
 if(FlushE == 1'b0)
 begin
@@ -318,11 +318,11 @@ endmodule
 module memstage (input RegWriteE,
                  input MemtoRegE,
                  input MemWriteE,MemReadE,
-                 input clk,
+                 input clk,enable,
                  output reg RegWriteM,
                  output reg MemtoRegM,
                  output reg MemWriteM,MemReadM);
-always@(posedge clk)
+always@(posedge clk, enable)
 begin
 RegWriteM <= RegWriteE;
 MemtoRegM <= MemtoRegE;
@@ -333,10 +333,10 @@ endmodule
 
 module writestage (input RegWriteM,
                    input MemtoRegM,
-                   input clk,
+                   input clk,enable,
                    output reg RegWriteW,
                    output reg MemtoRegW);
-always@(posedge clk)
+always@(posedge clk,enable)
 begin
 RegWriteW <= RegWriteM;
 MemtoRegW <= MemtoRegM;
