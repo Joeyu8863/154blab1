@@ -171,7 +171,7 @@ endmodule
                 6'b101010: alucontrol <= 4'b1011; //slt
                 6'b101011: alucontrol <= 4'b1011; //sltu
                 6'b101111: alucontrol <= 4'b1001; //xor
-                6'b111111: alucontrol <= 4'b1111; //for xnor
+                6'b111111: alucontrol <= 4'b1111; //for xnor op 6'b0 funct 6'b111111
                 default: alucontrol <= 4'bxxxx; //unknown
               endcase
             endcase
@@ -233,7 +233,13 @@ else if ((rsE != 5'b0) & (rsE== WriteRegW) & (RegWriteW == 1'b1))
                         ForwardAE <= 2'b01; 
 else 
     ForwardAE <= 2'b00;
-ForwardBE <= ForwardAE;
+if ((rtE != 5'b0) & (rtE== WriteRegM) & (RegWriteM == 1'b1)) //The generate if condition must be a constant expression.what's problem
+                        ForwardBE <= 2'b10;//lw 
+else if ((rtE != 5'b0) & (rtE== WriteRegW) & (RegWriteW == 1'b1))  
+                        ForwardBE <= 2'b01; 
+else 
+    ForwardBE <= 2'b00;
+
 end
 assign ForwardAD = (rsD != 5'b0) &(rsD == WriteRegM) & RegWriteM;//branch pg425
 assign ForwardBD = (rtD != 5'b0) & (rtD == WriteRegM) & RegWriteM;
