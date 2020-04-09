@@ -171,6 +171,7 @@ endmodule
                 6'b101010: alucontrol <= 4'b1011; //slt
                 6'b101011: alucontrol <= 4'b1011; //sltu
                 6'b101111: alucontrol <= 4'b1001; //xor
+                6'b111111: alucontrol <= 4'b1111; //for xnor
                 default: alucontrol <= 4'bxxxx; //unknown
               endcase
             endcase
@@ -244,31 +245,26 @@ assign stallD =stallF;
 assign flushE = stallD;
 endmodule
 
-                  output        memtoreg, memwrite,memread,// read new
-                  output        alusrca,alusrcb,//new
-                  output        se_ze,start_mult,mult_sign,//new
-                  output        regdst, regwrite,out_branch,
-                  output  [1:0] out_select,//00:aluout 01:sign extended  10: mulh 11:mull
-                  output  [3:0] alucontrol);//can srca b replaced
+
 module decodestage ( input [31:0] rd,
                      input [31:0] pcplus4f,
                      input clk,
                      input stalld, clear,
-                     output [31:0] pcplus4d,
-                     output [31:0] instrd);
+                     output reg[31:0] pcplus4d,
+                     output reg[31:0] instrd);
 
 always@(posedge clk, ~stalld)
 begin
 if(clear == 1'b0)
 begin
-assign pcplus4d = pcplus4f;
-assign instrd = rd;
+pcplus4d <= pcplus4f;
+instrd <= rd;
 end
 
 else
 begin
-assign pcplus4d = 32'bx;// what's code for nop?
-assign instrd = 32'bx;
+pcplus4d <= 32'bx;// what's code for nop?
+instrd <= 32'bx;
 end
 
 end
@@ -280,24 +276,24 @@ module excutionstage (input RegWriteD,
                       input [2:0] ALUControlD,
                       input alusrcD, clk,RegDstD,
                       input FlushE,
-                      output RegWriteE,
-                      output MemtoRegE,
-                      output MemWriteE,MemReadE,start_multE,mult_signE,
-                      input [3:0] ALUControlE,
-                      input alusrcE, RegDstE);
+                      output reg RegWriteE,
+                      output reg MemtoRegE,
+                      output reg MemWriteE,MemReadE,start_multE,mult_signE,
+                      output reg [3:0] ALUControlE,
+                      output reg alusrcE, RegDstE);
 always@(posedge clk)
 begin
 if(FlushE == 1'b0)
 begin
-assign RegWriteE = RegWriteD;
-assign MemtoRegE = MemtoRegD;
-assign MemWriteE = MemWriteD;
-assign MemReadE = MemReadD;
-assign start_multE = start_multD;
-assign mult_signE = mult_signD;
-assign ALUControlE = ALUControlD;
-assign alusrcE = alusrcD;
-assign RegDstE = RegDstD;
+ RegWriteE <= RegWriteD;
+ MemtoRegE <= MemtoRegD;
+ MemWriteE <= MemWriteD;
+ MemReadE <= MemReadD;
+ start_multE <= start_multD;
+ mult_signE <= mult_signD;
+ ALUControlE <= ALUControlD;
+ alusrcE <= alusrcD;
+ RegDstE <= RegDstD;
 end
 
 else
@@ -305,7 +301,7 @@ assign RegWriteE = 1'b0;//clr should be 0 or x?
 assign MemtoRegE = 1'b0;
 assign MemWriteE = 1'b0;
 assign MemReadE = 1'b0;
-assign start_multE = 1'b0
+assign start_multE = 1'b0;
 assign mult_signE = 1'b0;
 assign ALUControlE = 4'b0;
 assign alusrcE = 1'b0;
@@ -317,26 +313,26 @@ module memstage (input RegWriteE,
                  input MemtoRegE,
                  input MemWriteE,MemReadE,
                  input clk,
-                 output RegWriteM,
-                 output MemtoRegM,
-                 output MemWriteM,MemReadM);
+                 output reg RegWriteM,
+                 output reg MemtoRegM,
+                 output reg MemWriteM,MemReadM);
 always@(posedge clk)
 begin
-assign RegWriteM = RegWriteE;
-assign MemtoRegM = MemtoRegE;
-assign MemWriteM = MemWriteE;
-assign MemReadM = MemReadE;
+RegWriteM <= RegWriteE;
+MemtoRegM <= MemtoRegE;
+MemWriteM <= MemWriteE;
+MemReadM <= MemReadE;
 end
 endmodule
 
 module writestage (input RegWriteM,
                    input MemtoRegM,
                    input clk,
-                   output RegWriteW,
-                   output MemtoRegW);
+                   output reg RegWriteW,
+                   output reg MemtoRegW);
 always@(posedge clk)
 begin
-assign RegWriteW = RegWriteM;
-assign MemtoRegW = MemtoRegM;
+RegWriteW <= RegWriteM;
+MemtoRegW <= MemtoRegM;
 end
 endmodule
