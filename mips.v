@@ -10,15 +10,15 @@ module mips(input          clk, reset,
 
   wire        memtoreg, branch,
                pcsrc, zero,
-               alusrc, regdst, regwrite, jump;
+               alusrc, regdst, regwrite, se_ze;
   wire [2:0]  alucontrol;
 
   controller c(instr[31:26], instr[5:0], zero,
                memtoreg, memwrite, pcsrc,
-               alusrc, regdst, regwrite, jump,
+               alusrc, regdst, regwrite, se_ze,
                alucontrol);
   datapath dp(clk, reset, memtoreg, pcsrc,
-              alusrc, regdst, regwrite, jump,
+              alusrc, regdst, regwrite, se_ze,
               alucontrol,
               zero, pc, instr,
               aluout, writedata, readdata);
@@ -28,23 +28,19 @@ endmodule
 // Todo: Implement controller module
 module controller(input   [5:0] op, funct,
                   input         zero,eq_ne,//eq new
-                  input   [1:0] pc_source,//new
                   output        memtoreg, memwrite,memread,// read new
-                  output        pcsrc, alusrc,
                   output        alusrca,alusrcb,//new
                   output        se_ze,start_mult,mult_sign,//new
-                  output        regdst, regwrite,
-                  output        jump,
-                  output  [2:0] alucontrol);//can srca b replaced
-
+                  output        regdst, regwrite,out_branch,
+                  output  [1:0] out_select,//00:aluout 01:sign extended  10: mulh 11:mull
+                  output  [3:0] alucontrol);//can srca b replaced
 // **PUT YOUR CODE HERE**
-wire [1:0] aluop;
-wire branch;//eq_ne?
+wire [3:0] aluop;
 //maindec md(op, memtoreg, memwrite, branch, alusrc, regdst, regwrite, jump, aluop);
-maindec md(op, pc_source, eq_ne, memtoreg, memwrite, regdst, regwrite,  se_ze, start_mult, mult_sign, aluop);
+maindec md(op, funct, memtoreg, memwrite,memread, regdst, regwrite, se_ze, start_mult, mult_sign, alusrca,alusrcb,out_select,aluop);
 aludec ad(funct, aluop, alucontrol);
-assign pcsrc = (op[0])? branch & (!zero): branch & zero;// when op[0] is 1, pcsrc is branch& (!zero) , when op[0] is 0 , pcsrc is branch&zero
-
+assign out_branch = (op[0])? eq_ne & (!zero): eq_ne & zero;// when op[0] is 1, pcsrc is branch& (!zero) , when op[0] is 0 , pcsrc is branch&zero
+// 00:pc+4  01:branch  10: jump
 endmodule
 
 
@@ -53,7 +49,7 @@ endmodule
 module datapath(input          clk, reset,
                 input          memtoreg, pcsrc,
                 input          alusrc, regdst,
-                input          regwrite, jump,
+                input          regwrite, se_ze,
                 input   [2:0]  alucontrol,
                 output         zero,
                 output  [31:0] pc,
@@ -67,14 +63,14 @@ module datapath(input          clk, reset,
  wire[31:0] signimm, signimmsh;
  wire [31:0] srca, srcb;
  wire [31:0] result;
- 
+//mul in datapath
 flopr #(32) pcreg(clk, reset, pcnext, pc);
 adder pcadd1(pc, 32'b100, pcplus4);
 sl2 immsh(signimm, signimmsh);
 adder pcadd2(pcplus4, signimmsh, pcbranch);//
 mux2 #(32) pcbrmux(pcplus4, pcbranch, pcsrc, pcnextbr);//
 mux2 #(32) pcmux(pcnextbr, {pcplus4[31:28],
-instr[25:0], 2'b00}, jump, pcnext);//
+instr[25:0], 2'b00}, se_ze, pcnext);//
 // register file logic
 regfile rf(clk, regwrite, instr[25:21], instr[20:16],
 writereg, result, srca, writedata);
@@ -84,8 +80,8 @@ mux2 #(32) resmux(aluout, readdata, memtoreg, result);
 signext se(instr[15:0], signimm);
 // ALU logic
 mux2 #(32) srcbmux(writedata, signimm, alusrc, srcb);
-ALU alu(srca, srcb, clk, alucontrol, aluout, zero);//
-
+ALU alu(srca, srcb, alucontrol, aluout, zero);//
+MUL mul();
 endmodule
 
 module flopr#(parameter WIDTH = 8)
@@ -110,56 +106,61 @@ input  s,
 output  [WIDTH-1:0] y);
 assign y = s ? d1 : d0;
 endmodule
-//maindec md(op, pc_source, eq_ne, memtoreg, memwrite,
-// regdst, regwrite,  se_ze, start_mult, mult_sign, aluop);
 
 
-
-module maindec(input [5:0] op,
-               input [1:0] pc_source,
-               input   eq_ne,se_ze, start_mult, mult_sign,// do we really need start and sign
-               output  memtoreg, memwrite,
-               output  branch, alusrc,
-               output regdst, regwrite,
-               output  jump,//se_ze? and how is it work
-               output  [2:0] aluop);//change 1:0 to 2:0
-               reg [9:0] controls;//change 8:0 to 9:0
-assign {regwrite, regdst, alusrc, branch, memwrite,
-memtoreg, jump, aluop} = controls;//need to adjust
+module maindec(input [5:0] op,funct,
+               output  memtoreg, memwrite,memread,
+               output  regdst, regwrite,
+               output  se_ze,
+               output  start_mult, mult_sign,
+               output  alusrca,alusrcb,            
+               output  [1:0] out_select,
+               output  [3:0] aluop);//change 1:0 to 3:0
+reg [15:0] controls;//change 8:0 to 14:0
+assign {regwrite, regdst, alusrca,alusrcb,memwrite,memtoreg,memread,
+ start_mult, mult_sign, se_ze, out_select, aluop} = controls;//need to adjust
 
 always@(*)
 case(op)//ADD  addiu,lui,xori,slti,sltiu,
-6'b000000: controls <= 10'b1100000010; // RTYPE
-6'b100011: controls <= 10'b1010010000; // LW
-6'b101011: controls <= 10'b0010100000; // SW
-6'b000100: controls <= 10'b0001000001; // BEQ
-6'b000101: controls <= 10'b0001000001; // BNE
-6'b001000: controls <= 10'b1010000000; // ADDI
-6'b001001: controls <= 10'b1010000000; // ADDIU
-6'b001010: controls <= 10'b1010000011; // sltI
-6'b001011: controls <= 10'b1010000100; // sltIu
-6'b001111: controls <= 10'b1010000101; // lui
-6'b000001: controls <= 10'b1010000110; // xori make up op
-6'b001101: controls <= 10'b1010000011; // ORI
-6'b000010: controls <= 10'b0000001000; // J
-default: controls <= 10'bxxxxxxxxxx; // illegal op
+6'b000000: begin 
+case(funct)
+                6'b011000: controls <= 16'b1000000110000111; //mul
+                6'b011001: controls <= 16'b1000000100000111;//mulu
+                6'b010000: controls <= 16'b0100000000100111;//mfhi
+                6'b010010: controls <= 16'b0100000000110111;//mflo
+                default:   controls <= 16'b1100000000000010; // RTYPE
+endcase
+end
+6'b100011: controls <= 16'b1010010000000000; // LW
+6'b101011: controls <= 16'b0010100000000000; // SW
+6'b000100: controls <= 16'b0000000000000001; // BEQ
+6'b000101: controls <= 16'b0000000000000001; // BNE
+6'b001000: controls <= 16'b1010000000000000; // ADDI
+6'b001001: controls <= 16'b1010000000000000; // ADDIU
+6'b001010: controls <= 16'b1010000000000011; // sltI
+6'b001011: controls <= 16'b1010000000001000; // sltIu
+6'b001111: controls <= 16'b1010000000001001; // lui
+6'b000001: controls <= 16'b1010000000001100; // xori make up op
+6'b001101: controls <= 16'b1010000000000011; // ORI
+6'b000010: controls <= 16'b0000000001001111; // J
+default:   controls <= 16'bxxxxxxxxxxxxxxxx; // illegal op
 endcase
 
 endmodule
  
  module aludec (
  input [5:0]funct,
- input [1:0]aluop,
+ input [3:0]aluop,
  output reg [3:0] alucontrol);//make it [3:0]
  
  always@(*)
  case(aluop)//mult,multu,lui,ori,xori,slti,sltiu,
-   3'b000: alucontrol <= 4'b0010; //add for lw sw addi addiu
-   3'b001: alucontrol <= 4'b1010; //sub for beq BNE
-   3'b011: alucontrol <= 4'b1011; //or for slti
-   3'b100: alucontrol <= 4'b1011; //or for sltiu
-   3'b101: alucontrol <= 4'b0001; //or for lui
-   3'b110: alucontrol <= 4'b1001; //or for xori
+   4'b0000: alucontrol <= 4'b0010; //add for lw sw addi addiu
+   4'b0001: alucontrol <= 4'b1010; //sub for beq BNE
+   4'b0011: alucontrol <= 4'b1011; //or for slti
+   4'b1000: alucontrol <= 4'b1011; //or for sltiu
+   4'b1001: alucontrol <= 4'b0001; //or for lui
+   4'b1100: alucontrol <= 4'b1001; //or for xori
    default: case(funct) // r type        addu,subu,xor,sltu,
                 6'b100000: alucontrol <= 4'b0010; //add
                 6'b100001: alucontrol <= 4'b0010; //addu
@@ -170,10 +171,6 @@ endmodule
                 6'b101010: alucontrol <= 4'b1011; //slt
                 6'b101011: alucontrol <= 4'b1011; //sltu
                 6'b101111: alucontrol <= 4'b1001; //xor
-                6'b011000: alucontrol <= 4'b1111; //mul
-                6'b011001: alucontrol <= 4'b0111;//mulu
-                6'b010000: alucontrol <= 4'b0100;//mfhi
-                6'b010010: alucontrol <= 4'b0101;//mflo
                 default: alucontrol <= 4'bxxxx; //unknown
               endcase
             endcase
@@ -227,18 +224,119 @@ input [4:0]rsE,rtE,rsD,rtD,
 input [4:0]WriteRegM,WriteRegW,WriteRegE,
 input mulfinish,
 output BranchD,RegWriteE,RegWriteM, RegWriteW, flushE,MemtoRegE,MemtoRegM,stallF,stallD,ForwardAD,ForwardBD,
-output [1:0]ForwardAE, ForwardBE);
-if ((rsE != 5'b0) & (rsE== WriteRegM) & RegWriteM) //The generate if condition must be a constant expression.what's problem
-                   assign      ForwardAE = 2'b10;//lw 
-else if ((rsE != 5'b0) & (rsE== WriteRegW) & RegWriteW)  
-                   assign      ForwardAE = 2'b01; 
-else assign ForwardAE=2'b00;
+output reg [1:0]ForwardAE, ForwardBE);
+ always @ * begin
+if ((rsE != 5'b0) & (rsE== WriteRegM) & (RegWriteM == 1'b1)) //The generate if condition must be a constant expression.what's problem
+                        ForwardAE <= 2'b10;//lw 
+else if ((rsE != 5'b0) & (rsE== WriteRegW) & (RegWriteW == 1'b1))  
+                        ForwardAE <= 2'b01; 
+else 
+    ForwardAE <= 2'b00;
+ForwardBE <= ForwardAE;
+end
 assign ForwardAD = (rsD != 5'b0) &(rsD == WriteRegM) & RegWriteM;//branch pg425
 assign ForwardBD = (rtD != 5'b0) & (rtD == WriteRegM) & RegWriteM;
 wire branchstall = BranchD & RegWriteE & (WriteRegE == rsD | WriteRegE == rtD) | BranchD & MemtoRegM & (WriteRegM == rsD | WriteRegM == rtD);
 
 wire lwstall=((rsD==rtE) | (rtD==rtE)) & MemtoRegE; 
-assign stallF =lwstall | branchstall | ~mulfinish;
+assign stallF = lwstall | branchstall | ~mulfinish;
 assign stallD =stallF;
 assign flushE = stallD;
+endmodule
+
+                  output        memtoreg, memwrite,memread,// read new
+                  output        alusrca,alusrcb,//new
+                  output        se_ze,start_mult,mult_sign,//new
+                  output        regdst, regwrite,out_branch,
+                  output  [1:0] out_select,//00:aluout 01:sign extended  10: mulh 11:mull
+                  output  [3:0] alucontrol);//can srca b replaced
+module decodestage ( input [31:0] rd,
+                     input [31:0] pcplus4f,
+                     input clk,
+                     input stalld, clear,
+                     output [31:0] pcplus4d,
+                     output [31:0] instrd);
+
+always@(posedge clk, ~stalld)
+begin
+if(clear == 1'b0)
+begin
+assign pcplus4d = pcplus4f;
+assign instrd = rd;
+end
+
+else
+begin
+assign pcplus4d = 32'bx;// what's code for nop?
+assign instrd = 32'bx;
+end
+
+end
+endmodule
+
+module excutionstage (input RegWriteD,
+                      input MemtoRegD,
+                      input MemWriteD,MemReadD,start_multD,mult_signD,
+                      input [2:0] ALUControlD,
+                      input alusrcD, clk,RegDstD,
+                      input FlushE,
+                      output RegWriteE,
+                      output MemtoRegE,
+                      output MemWriteE,MemReadE,start_multE,mult_signE,
+                      input [3:0] ALUControlE,
+                      input alusrcE, RegDstE);
+always@(posedge clk)
+begin
+if(FlushE == 1'b0)
+begin
+assign RegWriteE = RegWriteD;
+assign MemtoRegE = MemtoRegD;
+assign MemWriteE = MemWriteD;
+assign MemReadE = MemReadD;
+assign start_multE = start_multD;
+assign mult_signE = mult_signD;
+assign ALUControlE = ALUControlD;
+assign alusrcE = alusrcD;
+assign RegDstE = RegDstD;
+end
+
+else
+assign RegWriteE = 1'b0;//clr should be 0 or x?
+assign MemtoRegE = 1'b0;
+assign MemWriteE = 1'b0;
+assign MemReadE = 1'b0;
+assign start_multE = 1'b0
+assign mult_signE = 1'b0;
+assign ALUControlE = 4'b0;
+assign alusrcE = 1'b0;
+assign RegDstE = 1'b0;
+end
+endmodule
+
+module memstage (input RegWriteE,
+                 input MemtoRegE,
+                 input MemWriteE,MemReadE,
+                 input clk,
+                 output RegWriteM,
+                 output MemtoRegM,
+                 output MemWriteM,MemReadM);
+always@(posedge clk)
+begin
+assign RegWriteM = RegWriteE;
+assign MemtoRegM = MemtoRegE;
+assign MemWriteM = MemWriteE;
+assign MemReadM = MemReadE;
+end
+endmodule
+
+module writestage (input RegWriteM,
+                   input MemtoRegM,
+                   input clk,
+                   output RegWriteW,
+                   output MemtoRegW);
+always@(posedge clk)
+begin
+assign RegWriteW = RegWriteM;
+assign MemtoRegW = MemtoRegM;
+end
 endmodule
