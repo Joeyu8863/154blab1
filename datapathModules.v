@@ -176,7 +176,7 @@ module hazard(//pg420 full hazard pg427
 input [4:0]rsE,rtE,rsD,rtD,
 input [4:0]WriteRegM,WriteRegW,WriteRegE,
 input multstall,
-output BranchD,RegWriteE,RegWriteM, RegWriteW, flushE,MemtoRegE,MemtoRegM,stallF,stallD,stallE,stallM,ForwardAD,ForwardBD,
+output BranchD,RegWriteE,RegWriteM, RegWriteW, flushE,MemtoRegE,MemtoRegM,stallF,stallD,stallE,stallM,stallW,ForwardAD,ForwardBD,
 output reg [1:0]ForwardAE, ForwardBE);
  always @ * begin
 if ((rsE != 5'b0) & (rsE== WriteRegM) & (RegWriteM == 1'b1)) //The generate if condition must be a constant expression.what's problem
@@ -203,9 +203,10 @@ assign stallD = stallF;
 assign flushE = stallD;
 assign stallE = multstall;
 assign stallM = multstall;
+assign stallW = multstall;
 endmodule
 
-module decodestage ( input [31:0] rd,
+module decodestage ( input [31:0] instr,
                      input [31:0] pcplus4f,
                      input clk, reset,
                      input enable, clear,
@@ -217,7 +218,7 @@ begin
 if(clear == 1'b0 & reset == 1'b0)
 begin
 pcplus4d <= pcplus4f;
-instrd <= rd;
+instrd <= instr;
 end else if(enable == 1'b0) begin
 pcplus4d <= 32'b0;
 instrd <= 32'b0;
@@ -225,23 +226,23 @@ end
 end
 endmodule
 
-module excutionstage (input RegWriteD,
+module executionstage (input RegWriteD,
                       input MemtoRegD,
-                      input MemWriteD,MemReadD,start_multD,mult_signD,
-                      input [3:0] ALUControlD, 
-		      input [1:0] outSelectD,
+                      input MemWriteD,start_multD,mult_signD,
+                      input [3:0] ALUControlD,
+		      input [1:0] outSelectD, alusrcD,
 		      input [4:0] RsD, RtD, RdD,
-		      input [31:0] s_id, z_id,
-                      input alusrcD, clk, reset, RegDstD,
+		      input [31:0] s_id, z_id, r_d1, r_d2,
+                      input clk, reset, RegDstD,
                       input FlushE,enable,
-		      output reg [31:0] s_ie, z_ie,
+		      output reg [31:0] s_ie, z_ie, r_e1, r_e2,
                       output reg RegWriteE,
                       output reg MemtoRegE,
-                      output reg MemWriteE,MemReadE,start_multE,mult_signE,
+                      output reg MemWriteE,start_multE,mult_signE,
 		      output reg [4:0] RsE, RtE, RdE,
                       output reg [3:0] ALUControlE,
-		      output reg [1:0] outSelectE,
-                      output reg alusrcE, RegDstE);
+		      output reg [1:0] outSelectE, alusrcE,
+                      output reg RegDstE);
 always@(posedge clk)
 begin
 if(FlushE == 1'b0 & reset == 1'b0)
@@ -249,7 +250,6 @@ begin
  RegWriteE <= RegWriteD;
  MemtoRegE <= MemtoRegD;
  MemWriteE <= MemWriteD;
- MemReadE <= MemReadD;
  start_multE <= start_multD;
  mult_signE <= mult_signD;
  ALUControlE <= ALUControlD;
@@ -261,52 +261,59 @@ begin
  RdE <= RdD;
  s_ie <= s_id;
  z_ie <= z_id;
+ r_e1 <= r_d1;
+ r_e2 <= r_d2;
 end
 else if(enable==1'b1)
 begin
 RegWriteE <= 1'b0;
 MemtoRegE <= 1'b0;
 MemWriteE <= 1'b0;
-MemReadE <= 1'b0;
 start_multE <= 1'b0;
 mult_signE <= 1'b0;
 ALUControlE <= 4'b0;
 outSelectE <= 2'b0;
-alusrcE <= 1'b0;
+alusrcE <= 2'b0;
 RegDstE <= 1'b0;
 RsE <= 5'b0;
 RtE <= 5'b0;
 RdE <= 5'b0;
 s_ie <= 32'b0;
 z_ie <= 32'b0;
+r_e1 <= 32'b0;
+r_e2 <= 32'b0;
 end
 end
 endmodule
 
 module memstage (input RegWriteE,
                  input MemtoRegE,
-                 input MemWriteE,MemReadE,
+                 input MemWriteE,
                  input clk,enable,reset,
 		 input [4:0] wr_e,
+		 input [31:0] wd_e, o_e,
 		 output reg [4:0] wr_m,
                  output reg RegWriteM,
                  output reg MemtoRegM,
-                 output reg MemWriteM,MemReadM);
+		 output reg [31:0] wd_m, ao_m,
+                 output reg MemWriteM);
 always@(posedge clk)
 begin
 	if (reset == 1'b1) begin
 		RegWriteM <= 1'b0;
 		MemtoRegM <= 1'b0;
 		MemWriteM <= 1'b0;
-		MemReadM <= 1'b0;
 		wr_m <= 5'b0;
+		wd_m <= 32'b0;
+		ao_m <= 32'b0;
 	end
 	else if (enable==1'b1) begin
 		RegWriteM <= RegWriteE;
 		MemtoRegM <= MemtoRegE;
 		MemWriteM <= MemWriteE;
-		MemReadM <= MemReadE;
 		wr_m <= wr_e;
+		wd_m <= wd_e;
+		ao_m <= o_e;
 	end
 end
 endmodule
@@ -315,7 +322,9 @@ module writestage (input RegWriteM,
                    input MemtoRegM,
                    input clk,enable,reset,
 		   input [4:0] wr_m,
+		   input [31:0] ao_m, rd_m,
 		   output reg [4:0] wr_w,
+		   output reg [31:0] ao_w, rd_w,
                    output reg RegWriteW,
                    output reg MemtoRegW);
 always@(posedge clk)
@@ -324,11 +333,15 @@ begin
 		RegWriteW <= 1'b0;
 		MemtoRegW <= 1'b0;
 		wr_w <= 5'b0;
+		ao_w <= 32'b0;
+		rd_w <= 32'b0;
 	end
 	else if (enable==1'b1) begin
 		RegWriteW <= RegWriteM;
 		MemtoRegW <= MemtoRegM;
 		wr_w <= wr_m;
+		ao_w <= ao_m;
+		rd_w <= rd_m;
 	end
 end
 endmodule
