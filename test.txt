@@ -1,4 +1,45 @@
 main: ori $t0, $0, 0x8000
-addi $t1, $0, -32768
-ori $t2, $t0, 0x8001
+addi $t1, $0, 28
+addi $t2, $0, -240
+addi $t3, $0, 0
+mul  $t1,$t2
+mflo $a3
+mfhi $a4
+add $a1, $0, $a3
+add $a2, $0, $a4
 
+
+addi $t1, $0, 110
+addi $t2, $0, 91
+mul  $t1, $t2
+mflo $a3
+mfhi $a4
+add $a1, $a1, $a3
+add $a2, $a2, $a4
+
+addi $t1, $0, -41
+addi $t2, $0, -101
+mul  $t1, $t2
+mflo $a3
+mfhi $a4
+add $a1, $a1, $a3
+add $a2, $a2, $a4
+
+addi $t1, $0, 23
+addi $t2, $0, 150
+mul  $t1, $t2
+mflo $a3
+mfhi $a4
+add $a1, $a1, $a3
+add $a2, $a2, $a4
+
+addi $t1, $0, -67
+addi $t2, $0, 88
+mul  $t1, $t2
+mflo $a3
+mfhi $a4
+add $a1, $a1, $a3
+add $a2, $a2, $a4
+
+
+//v = a2 | a1 dec 4985
