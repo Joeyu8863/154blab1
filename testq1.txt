@@ -1,0 +1,80 @@
+
+addi $t1, $0, 28  //load v1[0]
+addi $t2, $0, -240//load v2[0]
+mult  $t1,$t2     //mult   v1 v2   
+mflo $s3          //load low 32bit to s3      
+mfhi $s4          //load high 32bit to s4                
+add $s1, $0, $s3  //add s3 to s1 ,s1 is final result of low
+add $s2, $0, $s4  //add s4 to s2 ,s2 is final result of high
+
+addi $t1, $0, 110//load v1[1]
+addi $t2, $0, 91//load v2[1]
+mult  $t1, $t2
+mflo $s3
+mfhi $s4
+add $s1, $s1, $s3 //add s3 to s1 ,s1 is final result of low
+add $s2, $s2, $s4 //add s4 to s2 ,s2 is final result of high
+
+addi $t1, $0, -41//load v1[2]
+addi $t2, $0, -101//load v2[2]
+mult  $t1, $t2
+mflo $s3
+mfhi $s4
+add $s1, $s1, $s3 //add s3 to s1 ,s1 is final result of low
+add $s2, $s2, $s4 //add s4 to s2 ,s2 is final result of high
+
+addi $t1, $0, 23//load v1[3]
+addi $t2, $0, 150 //load v2[3]
+mult  $t1, $t2
+mflo $s3
+mfhi $s4
+add $s1, $s1, $s3 //add s3 to s1 ,s1 is final result of low
+add $s2, $s2, $s4 //add s4 to s2 ,s2 is final result of high
+
+addi $t1, $0, -67//load v1[4]
+addi $t2, $0, 88//load v2[4]
+mult  $t1, $t2
+mflo $s3
+mfhi $s4
+add $s1, $s1, $s3 //add s3 to s1 ,s1 is final result of low
+add $s2, $s2, $s4 //add s4 to s2 ,s2 is final result of high
+
+//low -6720  3290  7431 10881 4985
+//v = s2 | s1 dec 4985
+
+2009001c
+200aff10
+200b0000
+012a0018
+00009812
+0000a010
+00138820
+00149020
+2009006e
+200a005b
+012a0018
+00009812
+0000a010
+02338820
+02549020
+2009ffd7
+200aff9b
+012a0018
+00009812
+0000a010
+02338820
+02549020
+20090017
+200a0096
+012a0018
+00009812
+0000a010
+02338820
+02549020
+2009ffbd
+200a0058
+012a0018
+00009812
+0000a010
+02338820
+02549020
