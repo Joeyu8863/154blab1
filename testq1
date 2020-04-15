@@ -1,13 +1,12 @@
-addi $t1, $0, 28
-addi $t2, $0, -240
-addi $t3, $0, 0
-mult  $t1,$t2             1110010010000000
-mflo $s3         -6720    1110010111000000                   
-add $s1, $0, $s3
-sub $s2, $s1, $t2 -6480   1110011010110000
-and $s4, $s2, $s1 -7040        1110010010000000
-xor $s5, $s4, $s1         0000000101000000
-320
+addi $t1, $0, 28   //load 28 to t1
+addi $t2, $0, -240 //load -240 to t2 
+mult  $t1,$t2      //mult t1 t2
+mflo $s3           //load the low part to s3    
+add $s1, $0, $s3   //assign s1 = s3
+sub $s2, $s1, $t2  //sub s2=s1-t2
+and $s4, $s2, $s1  //s4=s2&s1
+xor $s5, $s4, $s1  //s5=s4^s1
+
 
 2009001c
 200aff10
