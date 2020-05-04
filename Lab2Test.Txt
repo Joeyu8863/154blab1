@@ -1,0 +1,67 @@
+main: ori $t0, $0, 0x80  //array address
+addi $t1,$0,5   // write 5 to t1
+addi $s1,$0,0   // i
+addi $t5,$0,10  // bound or loop times
+sw $t1,0($t0)//x0 make our own array of x, all of number are 5
+sw $t1,4($t0)//x1
+sw $t1,8($t0)//x2
+sw $t1,c($t0)//x3
+sw $t1,10($t0)//x4
+sw $t1,14($t0)//x5
+sw $t1,18($t0)//x6
+sw $t1,1c($t0)//x7
+sw $t1,20($t0)//x8
+sw $t1,24($t0)//x9
+sw $t1,28($t0)//x10
+addi $t2, $t0, 16380
+sw $t1,0($t2)      //y0 assign y0 to be 5
+
+forloop:
+beq $s1,$t5,endfor //loop condition if s1 is 10 break the loop
+lw $t1,0($t0)      //load x[i]
+add $s2,$t1,$t1    //s2 = 2*x[i]
+add $s2,$s2,$t1    //s2 = 3*x[i]
+add $s2,$s2,$t1    //s2 = 4*x[i]
+add $s2,$s2,$t1    //s2 = 5*x[i]
+lw $t3,0($t2)      //load y[i] to t3
+add $s2,$s2,$t3    //s2 = s2 + t3
+addi $t2, $t2, 4   //increment index
+addi $t0, $t0, 4   //increment index
+sw $s2,0($t2)      //store the result to y[i+1]
+addi $s1,$s1,1     //increment s1 loop times
+j forloop          //jump back to forloop
+
+endfor:
+
+//  y0 30 y1 55  y2 80  y3 105 y4 130  y5 155  y6 180  y7 205  y8 230 y9 255
+
+34080080
+20090005
+20110000
+200d000a
+ad090000
+ad090004
+ad090008
+ad090000
+ad09000a
+ad09000e
+ad090012
+ad090001
+ad090014
+ad090018
+ad09001c
+210a3ffc
+ad490000
+122d000c
+8d090000
+01299020
+02499020
+02499020
+02499020
+8d4b0000
+024b9020
+214a0004
+21080004
+ad520000
+22310001
+08000011
