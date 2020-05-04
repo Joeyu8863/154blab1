@@ -24,9 +24,9 @@ add $s2,$s2,$t1    //s2 = 4*x[i]
 add $s2,$s2,$t1    //s2 = 5*x[i]
 lw $t3,0($t2)      //load y[i] to t3
 add $s2,$s2,$t3    //s2 = s2 + t3
+sw $s2,0($t2)      //store the result to y[i+1]
 addi $t2, $t2, 4   //increment index
 addi $t0, $t0, 4   //increment index
-sw $s2,0($t2)      //store the result to y[i+1]
 addi $s1,$s1,1     //increment s1 loop times
 j forloop          //jump back to forloop
 endfor:
@@ -58,8 +58,8 @@ ad090002
 02499020
 8d4b0000
 024b9020
+ad520000
 214a0004
 21080004
-ad520000
 22310001
 08000011
