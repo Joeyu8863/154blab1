@@ -3,7 +3,6 @@ addi $t1,$0,5
 addi $t3,$0,6 
 addi $t4,$0,7 
 addi $t2, $t0, 16384
-addi $t5, $t0, 32768
 sw $t1,0($t0)  1
 sw $t1,0($t2) 0
 sw $t3,16384($t2) 1
