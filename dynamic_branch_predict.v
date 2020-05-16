@@ -36,7 +36,8 @@ begin
         flushbp = 1'b1;
         prediction_state[i] = 2'b01;    // what should determine the index of predpc
 //this case Enter branch instruction address and next PC intobranch-target buffer. 
-//Kill fetched instruction.Restart fetch at the correct target.
+//Kill fetched instruction.Restart fetch at the correct target.
+
     end   
   if(BranchD ==1'b0)//normal instruction
     begin
@@ -49,7 +50,8 @@ if(i ==1'b1) //found
 if(BranchD ==1'b1)//means it's a taken branch
     begin
          flushbp = 1'b0; // Branch correctly predicted; continue execution with no stalls. 
-        prediction_state[i] = 2'b11;
+        prediction_state[i] = 2'b11;
+
     end   
   if(BranchD ==1'b0)//Mispredicted branch, kill fetched instruction; restart fetch at the correct target
     begin
@@ -58,3 +60,17 @@ if(BranchD ==1'b1)//means it's a taken branch
     end
 end
 endmodule 
+a=0
+b=6
+loop
+
+branch eq  a b  do
+1
+2a+1
+3b-1
+4
+j loop
+
+do
+a-2
+j loop
