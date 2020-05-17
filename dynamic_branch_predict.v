@@ -1,68 +1,82 @@
-module branch_prediction(input [31:0]PC, input clk,BranchD,output reg flushbp, output stallbp, output reg [31:0]predicted_PC);
+module branch_prediction(input [31:0]PC, input [31:0]targetaddress, input clk,BranchD,output reg flushbp, output reg [31:0]predicted_PC);
 
-reg [63:0]branchpc[31:0];
-reg [63:0]predpc[31:0];
+reg [31:0]branchpc[127:0];
+reg [31:0]predpc[127:0];
+reg [1:0]predictionbit[127:0];
 integer i; 	
-reg [127:0]BHT[1:0];
+reg [1:0]BHT[127:0];
 reg prediction_state;// 11 strong preditction taken 10 weak preditction 01 weak predirction not taken 00 strong prediction not taken
-assign pc_4f = PC + 32'h4;	
 reg find = 1'b0;
+initial 
+begin
+for (i = 0; i < 128; i = i + 1) begin
+         predictionbit[i]=2'b0;
+    end
+end
+
+
 always @(posedge clk)
-for (i = 0; i < 64; i = i + 1) begin
-	if(branchpc[i] == PC) //found clk 1
+begin
+	if(branchpc[PC[6:0]] == PC && predictionbit[PC[6:0]][1] ==1'b1) //found clk 1
            begin
-           predicted_PC = predpc[i];
+           predicted_PC = predpc[PC[6:0]];
            find = 1'b1;
            end
-end
+        else begin
+           find = 1'b0;
+        end
+
 //clk2
 if(find == 1'b1)
 begin
 if(BranchD ==1'b1)//means it's a taken branch
     begin
         flushbp = 1'b0; // Branch correctly predicted; continue execution with no stalls. 
-        prediction_state = 2'b11;
+       // prediction_state = 2'b11;
 //clk3
-        if(BHT[i] != 2'b11)
-            BHT[i] = BHT[i] + 2'b1;
+        if(predictionbit[PC[6:0]] != 2'b11)
+            predictionbit[PC[6:0]] = predictionbit[PC[6:0]] + 2'b1;
 
     end   
 //clk2 
   if(BranchD ==1'b0)//Mispredicted branch, kill fetched instruction; restart fetch at the correct target
     begin
       flushbp = 1'b1;
-      prediction_state = 2'b10;
+   //   prediction_state = 2'b10;
 //clk3
-        if(BHT[i] != 2'b0)
-            BHT[i] = BHT[i] - 2'b1;
-end
+        if(predictionbit[PC[6:0]] != 2'b0)
+            predictionbit[PC[6:0]] = predictionbit[PC[6:0]] - 2'b1;
+    end
 end
 
-        if(find == 1'b0) //not found clk 1
-           begin
-           predicted_PC = pc_4f;
+if(find == 1'b0) //not found clk 1
+    begin
+      predicted_PC = PC + 32'h4;
 
 //clk 2
-if(PC[31:25] == 6'b0 & PC[5:0] == 6'b10x) // means instructions are beq or beq
-begin
-  if(BranchD ==1'b1)//means it's a taken branch
-    begin
-        flushbp = 1'b1;
-        prediction_state = 2'b01;    // what should determine the index of predpc
+
+           if(BranchD ==1'b1)//means it's a taken branch
+               begin
+                 flushbp = 1'b1;
+                 prediction_state = 2'b01;    // what should determine the index of predpc
+                 predpc[PC[6:0]] = targetaddress;
+                 branchpc[PC[6:0]] = PC;
+                 predictionbit[PC[6:0]] = 2'b1;
 //this case Enter branch instruction address and next PC intobranch-target buffer. 
 //Kill fetched instruction.Restart fetch at the correct target.
 //clk3
-        if(BHT[i] != 2'b11)
-            BHT[i] = BHT[i] + 2'b1;
+               if(predictionbit[PC[6:0]] != 2'b11)
+                   predictionbit[PC[6:0]] = predictionbit[PC[6:0]] + 2'b1;
         
 
-    end   
-  if(BranchD ==1'b0)//normal instruction
-    begin
-      flushbp = 1'b0;
-      prediction_state = 2'b00;
-    end
-end
+               end   
+          if(BranchD ==1'b0)//normal instruction
+               begin
+                 flushbp = 1'b0;
+                 prediction_state = 2'b00;
+                 predpc[PC[6:0]] = targetaddress;
+                 branchpc[PC[6:0]] = PC;
+       end
 end
 end
 
