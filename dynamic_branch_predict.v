@@ -67,6 +67,7 @@ end
 end
 
 endmodule 
+mispredict and add predict	
 ori $t0, $0,6
 ori $t1, $0,0
 ori $t2, $0,1
@@ -82,7 +83,7 @@ addi $t0,$t0,2
 j loop
 finish:
 	
-	
+
 34080006
 34090000
 340a0001
@@ -93,4 +94,26 @@ finish:
 08000004
 110b0002
 21080002
+08000004
+correct predict		
+ori $t0, $0,6
+ori $t1, $0,0
+ori $t2, $0,1
+ori $t3, $0,4
+loop:
+beq $t0,$t1,do
+sub $t0,$t0,$t2
+add $t1,$t1,$t2
+j loop
+do:
+j loop	
+
+34080006
+34090000
+340a0001
+340b0004
+11090003
+010a4022
+012a4820
+08000004
 08000004
