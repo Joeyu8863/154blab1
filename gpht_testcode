@@ -4,16 +4,16 @@ ori $t2, $0,0
 ori $t7, $0,1
 ori $t6, $0,1
 do:
-beq $t0,$t1, a //1-4 not taken 5 taken
+beq $t0,$t1, a //1-4 not taken 5-9 taken
 sub $t0,$t0,$t7
 a:
-beq $t0,$t2, b //1-4 not taken 5  taken
+beq $t0,$t2, b //1-4 not taken 5-9  taken
 addi $t2,$t2,1
 b:
 sub $t3,$t0,$t1
 sub $t4,$t0,$t2
 and $t5,$t3,$t4
-bne $t5,$0,do //1-4 taken 5 not taken
+bne $t5,$0,do //1-4 taken 5-9 not taken
 addi $t6,$t6,1
 bne $t6,$t1, do  //1-4 taken 5 not taken
 
