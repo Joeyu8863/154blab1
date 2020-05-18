@@ -1,0 +1,17 @@
+ori $t0, $0,6
+ori $t1, $0,0
+ori $t2, $0,1
+ori $t3, $0,3
+loop:
+sub $t0,$t0,$t2
+add $t1,$t1,$t2
+bne $t0,$t3, loop //1 taken 2 taken 3 not taken
+                  //1 add to buffer 2 predict correct 3 miss predict
+
+34080006
+34090000
+340a0001
+340b0003
+010a4022
+012a4820
+150bfffd
