@@ -34,10 +34,10 @@ ori $t1, $0,5
 ori $t2, $0,0
 ori $t7, $0,1
 do:
-beq $t0,$t1, a //1-4 not taken 5-9 taken
+beq $t0,$t1, a //1-10 not taken 
 sub $t0,$t0,$t7
 a:
-beq $t0,$t2, b //1-4 not taken 5-9  taken
+beq $t0,$t2, b //1-10 not taken 
 addi $t2,$t2,1
 b:
 bne $t2,$t0,do //1-4 taken 5-9 not taken
