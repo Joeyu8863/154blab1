@@ -16,3 +16,19 @@ add $t1,$t1,$t2               //1 add to buffer 2 predict correct 3 miss predict
 012a4820
 150bfffd
 012a4820
+
+ori $t0, $0,6
+ori $t1, $0,0
+ori $t2, $0,1
+ori $t3, $0,2
+loop:
+sub $t0,$t0,$t2
+bne $t0,$t3, loop //1 taken 2 taken 3 taken 4 not taken
+
+
+34080006
+34090000
+340a0001
+340b0002
+010a4022
+150bfffe
