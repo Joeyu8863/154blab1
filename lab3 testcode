@@ -33,13 +33,13 @@ bne $t0,$t3, loop //1 taken 2 taken 3 taken 4 not taken
 010a4022
 150bfffe
 
-ori $t0, $0,20
+ori $t0, $0,10
 ori $t1, $0,0
 ori $t2, $0,1
 loop:
 sub $t0,$t0,$t2
 bne $t0,$t1, loop 
-34080014
+3408000a
 34090000
 340a0001
 010a4022
