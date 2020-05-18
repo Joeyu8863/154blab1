@@ -14,20 +14,20 @@ bne $t2,$t0,do //1-4 taken 5-9 not taken
 addi $t6,$t6,1
 bne $t6,$t1, do  //1-4 taken 5 not taken
 
+340e0000
 3408000a
 34090005
 340a0000
 340f0001
-340e0001
 11090001
 010f4022
 112a0001
 214a0001
 150afffb
 21ce0001
-15c9fff9
+15c9fff5
 
-ori $t6, $0,1
+ori $t6, $0,0
 for:
 ori $t0, $0,10
 ori $t1, $0,5
