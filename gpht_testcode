@@ -11,7 +11,7 @@ beq $t0,$t2, b //1-4 not taken 5-9  taken
 addi $t2,$t2,1
 b:
 sub $t3,$t0,$t1
-sub $t4,$t0,$t2
+sub $t4,$t2,$t1
 and $t5,$t3,$t4
 bne $t5,$0,do //1-4 taken 5-9 not taken
 addi $t6,$t6,1
@@ -27,7 +27,7 @@ bne $t6,$t1, do  //1-4 taken 5 not taken
 1100fff8
 214a0001
 01095822
-010a6022
+01496022
 016c6824
 15a0fff3
 21ce0001
