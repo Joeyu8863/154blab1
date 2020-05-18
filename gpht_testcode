@@ -1,0 +1,28 @@
+ori $t0, $0,10
+ori $t1, $0,5
+ori $t2, $0,0
+ori $t7, $0,1
+do:
+sub $t0,$t0,$t7
+bne $t0,$t1, a //1-4 taken 5 not taken
+a:
+addi $t2,$t2,1
+bne $t0,$t2, b //1-4 taken 5 not taken
+b:
+sub $t3,$t0,$t1
+sub $t4,$t0,$t2
+and $t5,$t3,$t4
+bne $t5,$0,do //1-4 taken 5 not taken
+
+3408000a
+34090005
+340a0000
+340f0001
+010f4022
+15090000
+214a0001
+150a0000
+01095822
+010a6022
+016c6824
+15a0fff8
