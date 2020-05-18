@@ -4,10 +4,10 @@ ori $t2, $0,0
 ori $t7, $0,1
 ori $t6, $0,1
 do:
-bne $t0,$t1, a //1-4 taken 5 not taken
+beq $t0,$t1, a //1-4 not taken 5 taken
 sub $t0,$t0,$t7
 a:
-bne $t0,$t2, b //1-4 taken 5 not taken
+beq $t0,$t2, b //1-4 not taken 5  taken
 addi $t2,$t2,1
 b:
 sub $t3,$t0,$t1
@@ -22,9 +22,9 @@ bne $t6,$t1, do  //1-4 taken 5 not taken
 340a0000
 340f0001
 340e0001
-1500fffa
+1100fffa
 010f4022
-1500fff8
+1100fff8
 214a0001
 01095822
 010a6022
